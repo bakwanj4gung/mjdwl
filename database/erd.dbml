@@ -1,0 +1,180 @@
+Enum "status_enum" {
+  "pending"
+  "completed"
+  "canceled"
+}
+
+Enum "visibility_enum" {
+  "private"
+  "public"
+}
+
+Enum "type_comment_enum" {
+  "schedule"
+  "comment"
+}
+
+Table "colors" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "hex" varchar(7) [not null]
+  "created_at" timestamp [default: NULL]
+  "updated_at" timestamp [default: NULL]
+}
+
+Table "users" {
+  "id" bigint [pk, not null, increment]
+  "username" varchar(255) [unique, not null]
+  "email" varchar(255) [unique, default: NULL]
+  "email_verified_at" timestamp [default: NULL]
+  "password" varchar(255) [not null]
+  "remember_token" varchar(100) [default: NULL]
+  "created_at" timestamp [default: NULL]
+  "updated_at" timestamp [default: NULL]
+}
+
+Table "priorities" {
+  "id" bigint [pk, not null, increment]
+  "color_id" bigint [not null, note: "default color"]
+  "name" varchar(255) [not null]
+  "note" text [default: NULL]
+  "created_at" timestamp [default: NULL]
+  "updated_at" timestamp [default: NULL]
+
+  Indexes {
+    color_id [name: "priorities_color_id_foreign"]
+  }
+}
+
+Table "reaction_lists" {
+  "id" bigint [pk, not null, increment]
+  "name" bigint [not null]
+  "emoji" varchar(255) [not null]
+  "note" text [default: NULL]
+  "created_at" timestamp [default: NULL]
+  "updated_at" timestamp [default: NULL]
+}
+
+Table "schedules" {
+  "id" bigint [pk, not null, increment]
+  "maker_id" bigint [not null]
+  "priority_id" bigint [not null]
+  "color_id" bigint [default: NULL]
+  "visibility" visibility_enum [default: "private"]
+  "shareable" bool [default: false]
+  "title" varchar(255) [not null]
+  "start" timestamp [not null]
+  "end" timestamp [not null]
+  "status" status_enum [default: 'pending']
+  "note" text [default: NULL]
+  "deleted_at" timestamp [default: NULL]
+  "created_at" timestamp [default: NULL]
+  "updated_at" timestamp [default: NULL]
+
+  Indexes {
+    maker_id [name: "user_schedule_maker_id_foreign"]
+    priority_id [name: "schedules_priority_id_foreign"]
+    color_id [name: "schedules_color_id_foreign"]
+  }
+}
+
+Table "user_schedule" {
+  "id" bigint [pk, not null, increment]
+  "user_id" bigint [not null]
+  "schedule_id" bigint [not null]
+  "created_at" timestamp [default: NULL]
+  "updated_at" timestamp [default: NULL]
+
+  Indexes {
+    user_id [name: "user_schedule_user_id_foreign"]
+    schedule_id [name: "user_schedule_schedule_id_foreign"]
+  }
+}
+
+Table "comments" {
+  "id" bigint [pk, increment]
+  "user_id" bigint [not null, note: "writer"]
+  "parent_id" bigint [default: NULL, note: "between schedule_id or comment_id"]
+  "type" type_comment_enum [not null]
+  "content" text [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp [note: "Soft delete penting untuk moderasi"]
+
+  Indexes {
+    user_id [name: "comments_user_id_foreign"]
+    parent_id [name: "comments_parent_index"]
+  }
+}
+
+Table "reactions" {
+  "id" bigint [pk, increment]
+  "reaction_list_id" bigint [not null]
+  "user_id" bigint [not null, note: "writer"]
+  "parent_id" bigint [default: NULL, note: "between schedule_id or comment_id"]
+  "type" type_comment_enum [not null]
+  "content" text [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    user_id [name: "reactions_user_id_foreign"]
+    reaction_list_id [name: "reactions_reaction_list_id_foreign"]
+    parent_id [name: "reactions_parent_index"]
+  }
+}
+
+Table "activity_logs" {
+  "id" bigint [pk, not null, increment]
+  "log_name" varchar(255) [default: null, note: "Kategori log (misal: 'default', 'orders', 'system'). Berguna untuk filtering log berdasarkan modul."]
+  "description" text [not null, note: "Penjelasan aktivitas yang dibaca manusia (misal: 'User X mengubah data Y')."]
+  "subject_type" varchar(255) [default: null, note: "Nama Model/Class target yang diubah (Polymorphic Type). Misal: 'App\\Models\\Order'."]
+  "subject_id" bigint [default: null, note: "ID (PK) dari target yang diubah (Polymorphic ID)."]
+  "causer_type" varchar(255) [default: null, note: "Nama Model/Class pelaku aksi (Polymorphic Type). Biasanya 'App\\Models\\User'."]
+  "causer_id" bigint [default: null, note: "ID pelaku yang melakukan aksi (misal: User ID). Jika null, mungkin aksi sistem."]
+  "properties" json [default: null, note: "Menyimpan detail perubahan (attributes: old vs new) atau metadata tambahan dalam format JSON."]
+  "created_at" timestamp [default: NULL, note: "Waktu aktivitas terjadi."]
+
+  Indexes {
+    log_name [name: "activity_logs_log_name_index"]
+    (subject_type, subject_id) [name: "activity_logs_subject_index", note: "Index untuk pencarian cepat riwayat perubahan pada satu objek spesifik"]
+    (causer_type, causer_id) [name: "activity_logs_causer_index", note: "Index untuk melihat audit trail (jejak aktivitas) user tertentu"]
+  }
+}
+
+Table "error_logs" {
+  "id" bigint [pk, not null, increment, note: "**References** \n\n1. https://docs.google.com/document/d/1mC9CA5IOC79T4BuWajPNQ_bTYF32STQZ7nUijEXVa28/edit?usp=sharing \n2. https://claude.ai/share/a8041676-470e-48da-8630-4bbcf6b66ba1 \n3. https://laravel.com/docs/12.x/errors"]
+  "level" varchar(50) [not null, note: "Tingkat keparahan (misal: ERROR, CRITICAL, WARNING)"]
+  "message" text [not null, note: "Pesan error utama, (dari $e->getMessage())"]
+  "file" varchar(255) [default: null, note: "Nama file tempat error terjadi (dari $e->getFile())"]
+  "line" int [default: null, note: "Nomor baris tempat error terjadi (dari $e->getLine())"]
+  "stack_trace" longtext [default: null, note: "Jejak tumpukan lengkap (dari $e->getTraceAsString())"]
+  "context" json [default: null, note: "Konteks saat error: user, input, ip, dan 'url' disimpan di sini"]
+  "fingerprint" varchar(64) [default: null, note: "Hash (misAL: MD5 dari file+line) untuk mengelompokkan error serupa"]
+  "created_at" timestamp [default: NULL]
+
+  Indexes {
+    level [name: "error_logs_level_index"]
+    created_at [name: "error_logs_created_at_index"]
+    (file, line) [name: "error_logs_location_index"]
+    fingerprint [name: "error_logs_fingerprint_index", note: "Sangat penting untuk query pengelompokan (GROUP BY)"]
+  }
+}
+
+Ref "priorities_color_id_foreign":"colors"."id" < "priorities"."color_id" [delete: cascade]
+
+Ref "schedules_priority_id_foreign":"priorities"."id" < "schedules"."priority_id" [delete: cascade]
+
+Ref "schedules_color_id_foreign":"colors"."id" < "schedules"."color_id" [delete: set null]
+
+Ref "user_schedule_maker_id_foreign":"users"."id" < "schedules"."maker_id" [delete: cascade]
+
+Ref "user_schedule_user_id_foreign":"users"."id" < "user_schedule"."user_id" [delete: cascade]
+
+Ref "user_schedule_schedule_id_foreign":"schedules"."id" < "user_schedule"."schedule_id" [delete: cascade]
+
+Ref "reactions_user_id_foreign":"users"."id" < "reactions"."user_id" [delete: cascade]
+
+Ref "comments_user_id_foreign":"users"."id" < "comments"."user_id" [delete: cascade]
+
+Ref "reactions_reaction_list_id_foreign":"reaction_lists"."id" < "reactions"."reaction_list_id" [delete: cascade]
