@@ -20,7 +20,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
         'password',
     ];
@@ -51,14 +51,35 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's initials
+     * Relasi: User membuat banyak Schedules (sebagai maker)
      */
-    public function initials(): string
+    public function createdSchedules()
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
-            ->implode('');
+        return $this->hasMany(Schedule::class, 'maker_id');
+    }
+
+    /**
+     * Relasi: User terhubung dengan banyak Schedules (many-to-many)
+     */
+    public function schedules()
+    {
+        return $this->belongsToMany(Schedule::class, 'user_schedule')
+            ->withTimestamps();
+    }
+
+    /**
+     * Relasi: User membuat banyak Comments
+     */
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Relasi: User memberikan banyak Reactions
+     */
+    public function reactions()
+    {
+        return $this->hasMany(Reaction::class);
     }
 }
