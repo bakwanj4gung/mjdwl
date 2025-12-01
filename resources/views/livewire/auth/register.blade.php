@@ -9,13 +9,13 @@
             @csrf
             <!-- Name -->
             <flux:input
-                name="name"
-                :label="__('Name')"
+                name="username"
+                :label="__('Username') . '*'"
                 type="text"
                 required
                 autofocus
-                autocomplete="name"
-                :placeholder="__('Full name')"
+                autocomplete="username"
+                :placeholder="__('Username')"
             />
 
             <!-- Email Address -->
@@ -23,7 +23,6 @@
                 name="email"
                 :label="__('Email address')"
                 type="email"
-                required
                 autocomplete="email"
                 placeholder="email@example.com"
             />
@@ -31,7 +30,7 @@
             <!-- Password -->
             <flux:input
                 name="password"
-                :label="__('Password')"
+                :label="__('Password') . '*'"
                 type="password"
                 required
                 autocomplete="new-password"
@@ -42,7 +41,7 @@
             <!-- Confirm Password -->
             <flux:input
                 name="password_confirmation"
-                :label="__('Confirm password')"
+                :label="__('Confirm password') . '*'"
                 type="password"
                 required
                 autocomplete="new-password"

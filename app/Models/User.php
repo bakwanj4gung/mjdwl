@@ -51,35 +51,14 @@ class User extends Authenticatable
     }
 
     /**
-     * Relasi: User membuat banyak Schedules (sebagai maker)
+     * Get the user's initials
      */
-    public function createdSchedules()
+    public function initials(): string
     {
-        return $this->hasMany(Schedule::class, 'maker_id');
-    }
-
-    /**
-     * Relasi: User terhubung dengan banyak Schedules (many-to-many)
-     */
-    public function schedules()
-    {
-        return $this->belongsToMany(Schedule::class, 'user_schedule')
-            ->withTimestamps();
-    }
-
-    /**
-     * Relasi: User membuat banyak Comments
-     */
-    public function comments()
-    {
-        return $this->hasMany(Comment::class);
-    }
-
-    /**
-     * Relasi: User memberikan banyak Reactions
-     */
-    public function reactions()
-    {
-        return $this->hasMany(Reaction::class);
+        return Str::of($this->username)
+            ->explode(' ')
+            ->take(1)
+            ->map(fn ($word) => Str::substr($word, 0, 1))
+            ->implode('');
     }
 }
